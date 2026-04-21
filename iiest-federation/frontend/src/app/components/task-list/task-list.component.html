@@ -1,0 +1,106 @@
+<!-- frontend/src/app/components/task-list/task-list.component.html -->
+<div class="app-wrap">
+  <div class="card">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="list-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+            <line x1="3" y1="4.5" x2="13" y2="4.5"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="11.5" x2="13" y2="11.5"/>
+          </svg>
+        </div>
+        <div class="title-block">
+          <div class="main">Tasks</div>
+          <div class="sub">All Tasks</div>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn-new" (click)="openNew()">New Task</button>
+        <button class="btn-refresh" (click)="refresh()">Refresh</button>
+        <div class="search-wrap">
+          <input type="text" placeholder="Search" [(ngModel)]="search" (ngModelChange)="onSearchChange($event)"/>
+          <button>&#128269;</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="record-count">{{ total }} record{{ total !== 1 ? 's' : '' }}</div>
+
+    <!-- Table -->
+    <table>
+      <thead>
+        <tr>
+          <th style="width:34px"><input type="checkbox"/></th>
+          <th>Assigned To</th>
+          <th>Status</th>
+          <th>Due Date</th>
+          <th>Priority</th>
+          <th>Comments</th>
+          <th style="width:30px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading">
+          <td colspan="7" class="empty">Loading...</td>
+        </tr>
+        <tr *ngIf="!loading && tasks.length === 0">
+          <td colspan="7" class="empty">No tasks found. Click "New Task" to add one.</td>
+        </tr>
+        <tr *ngFor="let task of tasks">
+          <td><input type="checkbox"/></td>
+          <td class="user-cell">{{ task.assignedTo }}</td>
+          <td><span class="badge" [ngClass]="'s-' + task.status.replace(' ','-').toLowerCase()">{{ task.status }}</span></td>
+          <td>{{ task.dueDate | date:'dd/MM/yyyy' }}</td>
+          <td><span class="badge" [ngClass]="'p-' + task.priority.toLowerCase()">{{ task.priority }}</span></td>
+          <td class="comment-cell" [title]="task.comments || ''">{{ task.comments }}</td>
+          <td>
+            <div class="action-wrap" #menuRef>
+              <button class="chevron-btn" (click)="menuRef.open = !menuRef.open">▾</button>
+              <div class="action-menu" *ngIf="menuRef.open">
+                <button (click)="openEdit(task); menuRef.open = false">Edit</button>
+                <button class="del-btn" (click)="confirmDelete(task); menuRef.open = false">Delete</button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="page-left">
+        <select (change)="setPageSize(+$any($event.target).value)">
+          <option *ngFor="let n of [5,10,20,50]" [value]="n" [selected]="n === pageSize">{{ n }}</option>
+        </select>
+        <span>per page</span>
+      </div>
+      <button class="pg-btn" (click)="goPage(1)" [disabled]="page === 1">⇤ First</button>
+      <button class="pg-btn" (click)="goPage(page - 1)" [disabled]="page === 1">‹ Prev</button>
+      <button class="pg-btn" *ngFor="let p of pageArray" [class.pg-active]="p === page" (click)="goPage(p)">{{ p }}</button>
+      <button class="pg-btn" (click)="goPage(page + 1)" [disabled]="page === pages">Next ›</button>
+      <button class="pg-btn" (click)="goPage(pages)" [disabled]="page === pages">Last ⇥</button>
+    </div>
+  </div>
+</div>
+
+<!-- New / Edit Task Modal -->
+<app-task-form
+  *ngIf="showForm"
+  [formData]="formData"
+  [editMode]="editMode"
+  (save)="saveTask()"
+  (cancel)="showForm = false">
+</app-task-form>
+
+<!-- Delete Confirmation Modal -->
+<div class="overlay" *ngIf="showDelete" (click)="$event.target === $event.currentTarget && (showDelete = false)">
+  <div class="modal">
+    <div class="modal-hdr del-hdr">Delete</div>
+    <div class="del-msg">Do you want to delete task <strong>{{ deleteTask?.assignedTo }}</strong>?</div>
+    <div class="modal-footer">
+      <button class="btn-no" (click)="showDelete = false">No</button>
+      <button class="btn-yes" (click)="doDelete()">Yes</button>
+    </div>
+  </div>
+</div>

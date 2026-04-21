@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IIEST Federation – Task Manager</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f2f5;min-height:100vh;padding:20px}
+.app{max-width:960px;margin:0 auto}
+.page-title{font-size:13px;color:#888;margin-bottom:12px}
+.card{background:#fff;border-radius:6px;border:1px solid #dde1e7;overflow:visible}
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #eee;flex-wrap:wrap;gap:8px}
+.toolbar-left{display:flex;align-items:center;gap:10px}
+.list-icon{width:30px;height:30px;background:#9b2355;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.list-icon svg{stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round}
+.title-block .main{font-size:15px;font-weight:600;color:#222}
+.title-block .sub{font-size:11px;color:#999;margin-top:1px}
+.toolbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-new{background:#9b2355;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:13px;cursor:pointer;font-weight:500;transition:background .15s}
+.btn-new:hover{background:#7d1c44}
+.btn-refresh{background:#fff;color:#444;border:1px solid #ccc;padding:7px 16px;border-radius:4px;font-size:13px;cursor:pointer;transition:background .15s}
+.btn-refresh:hover{background:#f0f2f5}
+.search-wrap{display:flex;align-items:center;border:1px solid #ccc;border-radius:4px;overflow:hidden;background:#fff}
+.search-wrap input{border:none;outline:none;padding:6px 10px;font-size:13px;width:190px}
+.search-wrap button{background:none;border:none;padding:6px 10px;cursor:pointer;color:#666;font-size:14px}
+.record-count{font-size:12px;color:#777;padding:6px 16px;border-bottom:1px solid #f0f2f5;background:#fafbfc}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f7f8fa;color:#555;font-weight:600;text-align:left;padding:9px 12px;border-bottom:1px solid #e0e3e8;font-size:12px;user-select:none;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #f3f4f6;color:#333;vertical-align:middle}
+tbody tr:hover td{background:#fafbff}
+tbody tr:last-child td{border-bottom:none}
+.user-link{color:#2563eb;font-weight:500;text-decoration:none}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;letter-spacing:.2px}
+.s-completed{background:#dcfce7;color:#15803d}
+.s-inprogress{background:#dbeafe;color:#1d4ed8}
+.s-notstarted{background:#f1f5f9;color:#475569}
+.p-high{background:#fee2e2;color:#b91c1c}
+.p-low{background:#f0fdf4;color:#15803d}
+.p-normal{background:#eff6ff;color:#1d4ed8}
+.comment-cell{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.action-wrap{position:relative}
+.chevron-btn{background:#fff;border:1px solid #d1d5db;border-radius:3px;padding:3px 7px;cursor:pointer;font-size:11px;color:#555;transition:background .1s}
+.chevron-btn:hover{background:#f5f5f5}
+.action-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #e5e7eb;border-radius:5px;box-shadow:0 6px 18px rgba(0,0,0,.13);z-index:300;min-width:100px}
+.action-menu button{display:block;width:100%;text-align:left;padding:8px 16px;font-size:13px;background:none;border:none;cursor:pointer;color:#333;transition:background .1s}
+.action-menu button:hover{background:#f5f5f5}
+.action-menu .del-btn{color:#dc2626}
+.action-menu .del-btn:hover{background:#fee2e2}
+.pagination{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:10px 16px;border-top:1px solid #eee;flex-wrap:wrap}
+.page-left{display:flex;align-items:center;gap:6px;margin-right:auto;font-size:12px;color:#555}
+.page-left select{border:1px solid #ccc;border-radius:3px;padding:3px 6px;font-size:12px;outline:none}
+.pg-btn{background:#fff;border:1px solid #d1d5db;padding:4px 12px;border-radius:3px;font-size:12px;cursor:pointer;color:#444;transition:background .1s}
+.pg-btn:hover:not(:disabled){background:#f0f2f5}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed}
+.pg-active{background:#9b2355!important;color:#fff!important;border-color:#9b2355!important}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding-top:70px}
+.modal{background:#fff;border-radius:7px;width:600px;max-width:95vw;box-shadow:0 20px 40px rgba(0,0,0,.2);overflow:hidden}
+.modal-hdr{padding:14px 20px;border-bottom:1px solid #eee;font-size:15px;font-weight:600;text-align:center;color:#333;background:#fafbfc}
+.modal-hdr.del-hdr{background:#dc2626;color:#fff;text-align:left}
+.modal-body{padding:22px 20px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:16px}
+.form-row.full{grid-template-columns:1fr}
+.fgroup{display:flex;flex-direction:column;gap:5px}
+.fgroup label{font-size:12px;color:#555;font-weight:600}
+.req{color:#dc2626}
+.fgroup input,.fgroup select,.fgroup textarea{border:1px solid #d1d5db;border-radius:4px;padding:8px 11px;font-size:13px;outline:none;font-family:inherit;color:#333;transition:border-color .15s}
+.fgroup input:focus,.fgroup select:focus,.fgroup textarea:focus{border-color:#9b2355;box-shadow:0 0 0 2px rgba(155,35,85,.1)}
+.fgroup textarea{resize:vertical;min-height:90px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #eee;background:#fafbfc}
+.btn-cancel{background:#fff;border:1px solid #ccc;padding:7px 20px;border-radius:4px;font-size:13px;cursor:pointer;color:#555}
+.btn-cancel:hover{background:#f5f5f5}
+.btn-save{background:#9b2355;color:#fff;border:none;padding:7px 20px;border-radius:4px;font-size:13px;cursor:pointer;font-weight:600}
+.btn-save:hover{background:#7d1c44}
+.btn-no{background:#6b7280;color:#fff;border:none;padding:7px 20px;border-radius:4px;font-size:13px;cursor:pointer}
+.btn-yes{background:#dc2626;color:#fff;border:none;padding:7px 20px;border-radius:4px;font-size:13px;cursor:pointer;font-weight:600}
+.del-msg{padding:22px 20px;font-size:14px;color:#333;line-height:1.6}
+.del-msg strong{color:#dc2626}
+.empty-row td{text-align:center;padding:50px;color:#bbb;font-size:14px}
+input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:#9b2355}
+@media(max-width:640px){
+  .form-row{grid-template-columns:1fr}
+  body{padding:10px}
+  table{font-size:11px}
+  td,th{padding:7px 7px}
+  .search-wrap input{width:130px}
+  .modal{width:98vw}
+}
+</style>
+</head>
+<body>
+<div class="app" id="root"></div>
+
+<script>
+const USERS=['User 1','User 2','User 3','User 4','User 5'];
+const STATUSES=['Not Started','In Progress','Completed'];
+const PRIORITIES=['Low','Normal','High'];
+const KEY='iiest_tasks_v2';
+
+function load(){
+  try{const d=localStorage.getItem(KEY);if(d)return JSON.parse(d);}catch(e){}
+  return [
+    {id:1,assignedTo:'User 1',status:'Completed',dueDate:'2024-10-12',priority:'Low',comments:'This task is good'},
+    {id:2,assignedTo:'User 2',status:'In Progress',dueDate:'2024-09-14',priority:'High',comments:'This needs review'},
+    {id:3,assignedTo:'User 3',status:'Not Started',dueDate:'2024-08-18',priority:'Low',comments:'This is pending'},
+    {id:4,assignedTo:'User 4',status:'In Progress',dueDate:'2024-06-12',priority:'Normal',comments:'This task is good'},
+  ];
+}
+function save(tasks){try{localStorage.setItem(KEY,JSON.stringify(tasks));}catch(e){}}
+function nextId(){return Math.max(0,...st.tasks.map(t=>t.id))+1;}
+function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
+function sBadge(s){if(s==='Completed')return's-completed';if(s==='In Progress')return's-inprogress';return's-notstarted';}
+function pBadge(p){if(p==='High')return'p-high';if(p==='Low')return'p-low';return'p-normal';}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+const st={
+  tasks:load(),search:'',page:1,pageSize:20,
+  modal:null,form:{assignedTo:'User 1',status:'Not Started',dueDate:'',priority:'Normal',comments:''},
+  editId:null,deleteId:null,openMenu:null,selected:new Set()
+};
+
+function render(){
+  const root=document.getElementById('root');
+  const q=st.search.toLowerCase();
+  const filtered=st.tasks.filter(t=>!q||(t.assignedTo+t.status+t.dueDate+t.priority+t.comments).toLowerCase().includes(q));
+  const total=filtered.length;
+  const pages=Math.max(1,Math.ceil(total/st.pageSize));
+  const pg=Math.min(st.page,pages);
+  const slice=filtered.slice((pg-1)*st.pageSize,pg*st.pageSize);
+  const allChecked=slice.length>0&&slice.every(t=>st.selected.has(t.id));
+
+  let rows='';
+  if(!slice.length){
+    rows=`<tr class="empty-row"><td colspan="7">No tasks found. Click "New Task" to add one.</td></tr>`;
+  } else {
+    slice.forEach(t=>{
+      rows+=`<tr>
+        <td><input type="checkbox" ${st.selected.has(t.id)?'checked':''} onchange="toggleRow(${t.id},this.checked)"/></td>
+        <td><span class="user-link">${esc(t.assignedTo)}</span></td>
+        <td><span class="badge ${sBadge(t.status)}">${esc(t.status)}</span></td>
+        <td>${esc(fmtDate(t.dueDate))}</td>
+        <td><span class="badge ${pBadge(t.priority)}">${esc(t.priority)}</span></td>
+        <td class="comment-cell" title="${esc(t.comments||'')}">${esc(t.comments||'')}</td>
+        <td><div class="action-wrap">
+          <button class="chevron-btn" onclick="toggleMenu(event,${t.id})">▾</button>
+          ${st.openMenu===t.id?`<div class="action-menu">
+            <button onclick="openEdit(${t.id})">Edit</button>
+            <button class="del-btn" onclick="openDel(${t.id})">Delete</button>
+          </div>`:''}
+        </div></td>
+      </tr>`;
+    });
+  }
+
+  let pgBtns='';
+  for(let i=1;i<=pages;i++){
+    if(pages<=7||i===1||i===pages||Math.abs(i-pg)<=1){
+      pgBtns+=`<button class="pg-btn${i===pg?' pg-active':''}" onclick="goPage(${i})">${i}</button>`;
+    }
+  }
+
+  let html=`<div class="card">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="list-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16">
+            <line x1="3" y1="4.5" x2="13" y2="4.5"/>
+            <line x1="3" y1="8" x2="13" y2="8"/>
+            <line x1="3" y1="11.5" x2="13" y2="11.5"/>
+          </svg>
+        </div>
+        <div class="title-block">
+          <div class="main">Tasks</div>
+          <div class="sub">All Tasks</div>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn-new" onclick="openNew()">New Task</button>
+        <button class="btn-refresh" onclick="doRefresh()">Refresh</button>
+        <div class="search-wrap">
+          <input type="text" placeholder="Search" value="${esc(st.search)}" oninput="doSearch(this.value)"/>
+          <button>&#128269;</button>
+        </div>
+      </div>
+    </div>
+    <div class="record-count">${total} record${total!==1?'s':''}</div>
+    <table>
+      <thead><tr>
+        <th style="width:34px"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleAll(this.checked)"/></th>
+        <th>Assigned To</th><th>Status</th><th>Due Date</th><th>Priority</th><th>Comments</th><th style="width:30px"></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="pagination">
+      <div class="page-left">
+        <select onchange="setPS(this.value)">
+          ${[5,10,20,50].map(n=>`<option value="${n}"${st.pageSize===n?' selected':''}>${n}</option>`).join('')}
+        </select>
+        <span>per page</span>
+      </div>
+      <button class="pg-btn" onclick="goPage(1)" ${pg===1?'disabled':''}>⇤ First</button>
+      <button class="pg-btn" onclick="goPage(${pg-1})" ${pg===1?'disabled':''}>‹ Prev</button>
+      ${pgBtns}
+      <button class="pg-btn" onclick="goPage(${pg+1})" ${pg===pages?'disabled':''}>Next ›</button>
+      <button class="pg-btn" onclick="goPage(${pages})" ${pg===pages?'disabled':''}>Last ⇥</button>
+    </div>
+  </div>`;
+
+  if(st.modal==='new'||st.modal==='edit'){
+    const f=st.form;
+    html+=`<div class="overlay" id="overlay" onclick="overlayClick(event)">
+      <div class="modal">
+        <div class="modal-hdr">${st.modal==='new'?'New Task':'Edit Task'}</div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="fgroup">
+              <label><span class="req">*</span> Assigned To</label>
+              <select id="fAt" onchange="sf('assignedTo',this.value)">
+                ${USERS.map(u=>`<option value="${u}"${f.assignedTo===u?' selected':''}>${u}</option>`).join('')}
+              </select>
+            </div>
+            <div class="fgroup">
+              <label><span class="req">*</span> Status</label>
+              <select id="fSt" onchange="sf('status',this.value)">
+                ${STATUSES.map(s=>`<option value="${s}"${f.status===s?' selected':''}>${s}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fgroup">
+              <label>Due Date</label>
+              <input type="date" value="${f.dueDate}" onchange="sf('dueDate',this.value)"/>
+            </div>
+            <div class="fgroup">
+              <label><span class="req">*</span> Priority</label>
+              <select id="fPr" onchange="sf('priority',this.value)">
+                ${PRIORITIES.map(p=>`<option value="${p}"${f.priority===p?' selected':''}>${p}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="fgroup">
+              <label>Description</label>
+              <textarea oninput="sf('comments',this.value)">${esc(f.comments)}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn-save" onclick="saveTask()">Save</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if(st.modal==='delete'){
+    const t=st.tasks.find(x=>x.id===st.deleteId);
+    html+=`<div class="overlay" id="overlay" onclick="overlayClick(event)">
+      <div class="modal">
+        <div class="modal-hdr del-hdr">Delete</div>
+        <div class="del-msg">Do you want to delete task <strong>${t?esc(t.assignedTo):''}</strong>?</div>
+        <div class="modal-footer">
+          <button class="btn-no" onclick="closeModal()">No</button>
+          <button class="btn-yes" onclick="confirmDel()">Yes</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  root.innerHTML=html;
+}
+
+function openNew(){st.form={assignedTo:'User 1',status:'Not Started',dueDate:'',priority:'Normal',comments:''};st.modal='new';st.openMenu=null;render();}
+function openEdit(id){
+  const t=st.tasks.find(x=>x.id===id);if(!t)return;
+  st.form={assignedTo:t.assignedTo,status:t.status,dueDate:t.dueDate,priority:t.priority,comments:t.comments||''};
+  st.editId=id;st.modal='edit';st.openMenu=null;render();
+}
+function openDel(id){st.deleteId=id;st.modal='delete';st.openMenu=null;render();}
+function closeModal(){st.modal=null;st.editId=null;st.deleteId=null;render();}
+function overlayClick(e){if(e.target.id==='overlay')closeModal();}
+function saveTask(){
+  const f=st.form;
+  if(!f.assignedTo||!f.status||!f.priority){alert('Please fill all required fields.');return;}
+  if(st.modal==='new'){st.tasks.push({id:nextId(),...f});}
+  else{st.tasks=st.tasks.map(t=>t.id===st.editId?{...t,...f}:t);}
+  save(st.tasks);closeModal();
+}
+function confirmDel(){st.tasks=st.tasks.filter(t=>t.id!==st.deleteId);save(st.tasks);closeModal();}
+function sf(k,v){st.form[k]=v;}
+function doSearch(v){st.search=v;st.page=1;render();}
+function doRefresh(){st.search='';st.page=1;render();}
+function goPage(p){st.page=p;st.openMenu=null;render();}
+function setPS(v){st.pageSize=parseInt(v);st.page=1;render();}
+function toggleMenu(e,id){e.stopPropagation();st.openMenu=st.openMenu===id?null:id;render();}
+function toggleAll(v){
+  const q=st.search.toLowerCase();
+  const filtered=st.tasks.filter(t=>!q||(t.assignedTo+t.status+t.dueDate+t.priority+t.comments).toLowerCase().includes(q));
+  const pages=Math.max(1,Math.ceil(filtered.length/st.pageSize));
+  const pg=Math.min(st.page,pages);
+  const slice=filtered.slice((pg-1)*st.pageSize,pg*st.pageSize);
+  if(v)slice.forEach(t=>st.selected.add(t.id));else slice.forEach(t=>st.selected.delete(t.id));
+  render();
+}
+function toggleRow(id,v){if(v)st.selected.add(id);else st.selected.delete(id);render();}
+document.addEventListener('click',e=>{if(st.openMenu&&!e.target.closest('.action-wrap')){st.openMenu=null;render();}});
+render();
+</script>
+</body>
+</html>
